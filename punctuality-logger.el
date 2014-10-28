@@ -1,7 +1,32 @@
-;;; punctuality-logger --- Punctuality logger for Emacs
+;;; punctuality-logger.el --- Punctuality logger for Emacs
+
+;; Copyright (C) 2014 Philip Woods
+
+;; Author: Philip Woods <elzairthesorcerer@gmail.com>
+;; Version: 0.1
+;; Keywords: reminder, calendar
+;; URL: https://gitlab.com/elzair/punctuality-logger
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
-;;; This package helps you keep track of when you are on time
-;;; and when you are late to your various appointments.
+
+;; This package helps you keep track of when you are on time
+;; and when you are late to your various appointments.
+
 ;;; Code:
 
 (defvar punctuality-logger-log-dir
@@ -60,6 +85,11 @@ MINUTES-LATE is how many minutes you were late."
       (let ((minutes-late (read-from-minibuffer "By how many minutes?" )))
         (punctuality-logger-write-log t (string-to-number minutes-late)))
       (punctuality-logger-write-log nil)))
+
+;; Add menu item in Tools menu
+(define-key global-map
+  [menu-bar tools new-punctuality-log]
+  '("New Punctuality Log" . punctuality-logger-new-log))
 
 (provide 'punctuality-logger)
 ;;; punctuality-logger.el ends here

@@ -5,7 +5,7 @@
 ;;; Code:
 
 (defvar punctuality-logger-log-dir
-  (concat (file-name-as-directory (getenv "HOME")) "tardiness-log")
+  (concat (file-name-as-directory (getenv "HOME")) "punctuality-log")
   "Directory where punctuality-logger information is kept.")
 
 (defun punctuality-logger-current-date ()
@@ -50,7 +50,7 @@ LATEP is whether or not you were late.
 MINUTES-LATE is how many minutes you were late."
   (punctuality-logger-ensure-log-dir-exists)
   (punctuality-logger-write-string-to-file
-   (prin1-to-string (punctuality-logger-log-template latep minutes-late))
+   (pp-to-string (punctuality-logger-log-template latep minutes-late))
    (punctuality-logger-log-name)))
 
 (defun punctuality-logger-new-log ()

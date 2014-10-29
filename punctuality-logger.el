@@ -3,7 +3,8 @@
 ;; Copyright (C) 2014 Philip Woods
 
 ;; Author: Philip Woods <elzairthesorcerer@gmail.com>
-;; Version: 0.1
+;; Version: 0.2
+;; Package-Requires ((cl-format "*"))
 ;; Keywords: reminder, calendar
 ;; URL: https://gitlab.com/elzair/punctuality-logger
 
@@ -32,8 +33,12 @@
 (require 'cl)
 
 (defvar punctuality-logger-log-dir
-  (concat (file-name-as-directory (getenv "HOME")) "punctuality-log")
+  (expand-file-name "~/punctuality-log")
   "Directory where punctuality-logger information is kept.")
+
+(defun punctuality-logger-pp (lst )
+    "Pretty print LST."
+  (mapconcat #'identity lst "\n"))
 
 (defun punctuality-logger-current-date ()
     "Evaluate to current date in YYYY-MM-DD format."
@@ -41,9 +46,8 @@
 
 (defun punctuality-logger-log-name ()
   "Evaluate to the name of the log for the current day."
-  (concat (file-name-as-directory punctuality-logger-log-dir)
-          (punctuality-logger-current-date)
-          ".tl"))
+  (expand-file-name (punctuality-logger-current-date)
+                    punctuality-logger-log-dir))
 
 (defun punctuality-logger-log-template (latep &optional minutes-late)
   "Create template for tardiness log entry.
@@ -69,21 +73,27 @@ MINUTES-LATE is how many minutes you were late."
                     (point-max)
                     file))))
 
+(defun punctuality-logger-append-log-dir (entries)
+    "Append `punctuality-logger-log-dir' to ENTRIES."
+  (mapcar #'(lambda (x) (expand-file-name x punctuality-logger-log-dir))
+          entries))
+
 (defun punctuality-logger-logs (&optional start-date)
   "Retrieve all logs from `punctuality-logger-log-dir'.
 
 START-DATE is the date from which to start."
-  (remove-if #'(lambda (x) (or (equal x ".")
-                               (equal x "..")
-                               (and (bound-and-true-p start-date)
-                                    (string< (file-name-sans-extension x)
-                                             start-date))))
-             (directory-files punctuality-logger-log-dir)))
+   (remove-if #'(lambda (x) (or (equal x ".")
+                                (equal x "..")
+                                (equal x ".git")
+                                (and (bound-and-true-p start-date)
+                                     (string< x start-date))))
+              (directory-files punctuality-logger-log-dir)))
 
 (defun punctuality-logger-read-log (file)
   "Read in the contents of log FILE."
   (with-temp-buffer
-    (insert-file-contents file)
+    (insert-file-contents (expand-file-name file
+                                            punctuality-logger-log-dir))
     (eval (read (concat "'" (buffer-string))))))
 
 (defun punctuality-logger-write-log (latep &optional minutes-late)
@@ -104,7 +114,7 @@ LATEP determines whether the result is a list of late days or on-time days.
 
 START-DATE is the (optional) day to start the results."
   (remove-if-not #'(lambda (x)
-              (equal (assoc 'latep (punctuality-logger-read-log x))
+              (equal (second (assq 'latep (punctuality-logger-read-log x)))
                      latep))
                  (punctuality-logger-logs start-date)))
 
@@ -123,9 +133,16 @@ START-DATE is the (optional) day to start the results."
 
 START-DATE is the (optional)"
     (interactive)
-    (punctuality-logger-entries t start-date))
+    (switch-to-buffer (generate-new-buffer "late-days"))
+    (insert (punctuality-logger-pp
+             (punctuality-logger-entries t start-date))))
 
 ;; Menu Bindings
+
+(define-key-after global-map
+  [menu-bar tools punctuality-logger]
+  (cons "Punctuality Logger" (make-sparse-keymap "major modes"))
+  'kill-buffer)
 
 (define-key global-map
   [menu-bar tools punctuality-logger new-punctuality-log]

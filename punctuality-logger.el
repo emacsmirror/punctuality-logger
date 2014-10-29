@@ -29,6 +29,8 @@
 
 ;;; Code:
 
+(require 'cl)
+
 (defvar punctuality-logger-log-dir
   (concat (file-name-as-directory (getenv "HOME")) "punctuality-log")
   "Directory where punctuality-logger information is kept.")
@@ -67,6 +69,23 @@ MINUTES-LATE is how many minutes you were late."
                     (point-max)
                     file))))
 
+(defun punctuality-logger-logs (&optional start-date)
+  "Retrieve all logs from `punctuality-logger-log-dir'.
+
+START-DATE is the date from which to start."
+  (remove-if #'(lambda (x) (or (equal x ".")
+                               (equal x "..")
+                               (and (bound-and-true-p start-date)
+                                    (string< (file-name-sans-extension x)
+                                             start-date))))
+             (directory-files punctuality-logger-log-dir)))
+
+(defun punctuality-logger-read-log (file)
+  "Read in the contents of log FILE."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (eval (read (concat "'" (buffer-string))))))
+
 (defun punctuality-logger-write-log (latep &optional minutes-late)
     "Create a new log entry for the current day.
 
@@ -78,18 +97,43 @@ MINUTES-LATE is how many minutes you were late."
    (pp-to-string (punctuality-logger-log-template latep minutes-late))
    (punctuality-logger-log-name)))
 
+(defun punctuality-logger-entries (latep &optional start-date)
+    "Evaluate to a list of entries where you were either late or not late.
+
+LATEP determines whether the result is a list of late days or on-time days.
+
+START-DATE is the (optional) day to start the results."
+  (remove-if-not #'(lambda (x)
+              (equal (assoc 'latep (punctuality-logger-read-log x))
+                     latep))
+                 (punctuality-logger-logs start-date)))
+
+;; Interactive Functions
+
 (defun punctuality-logger-new-log ()
     "Create a new log entry for the current day."
     (interactive)
-    (if (y-or-n-p "Were you late today?")
-      (let ((minutes-late (read-from-minibuffer "By how many minutes?" )))
+    (if (y-or-n-p "Were you late today? ")
+      (let ((minutes-late (read-from-minibuffer "By how many minutes? ")))
         (punctuality-logger-write-log t (string-to-number minutes-late)))
       (punctuality-logger-write-log nil)))
 
-;; Add menu item in Tools menu
+(defun punctuality-logger-late-days (&optional start-date )
+    "Evaluate to the list of days you were late.
+
+START-DATE is the (optional)"
+    (interactive)
+    (punctuality-logger-entries t start-date))
+
+;; Menu Bindings
+
 (define-key global-map
-  [menu-bar tools new-punctuality-log]
+  [menu-bar tools punctuality-logger new-punctuality-log]
   '("New Punctuality Log" . punctuality-logger-new-log))
+
+(define-key global-map
+  [menu-bar tools punctuality-logger list-late-days]
+  '("List Late Days" . punctuality-logger-late-days))
 
 (provide 'punctuality-logger)
 ;;; punctuality-logger.el ends here

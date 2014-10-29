@@ -1,3 +1,4 @@
+[![MELPA](http://melpa.org/packages/punctuality-logger-badge.svg)](http://melpa.org/#/punctuality-logger)
 punctuality-logger
 ==================
 

@@ -36,9 +36,18 @@
   (expand-file-name "~/punctuality-log")
   "Directory where punctuality-logger information is kept.")
 
-(defun punctuality-logger-pp (lst )
+(defun punctuality-logger-pp (lst)
     "Pretty print LST."
   (mapconcat #'identity lst "\n"))
+
+(defmacro punctuality-logger-out (bufname &rest body)
+  "Write output to buffer.
+
+BUFNAME is the name of the buffer to create and switch to.
+
+BODY is the code to evaluate to obtain the output."
+  `(progn (switch-to-buffer (generate-new-buffer ,bufname))
+          (insert (pp-to-string ,@body))))
 
 (defun punctuality-logger-current-date ()
     "Evaluate to current date in YYYY-MM-DD format."
@@ -78,8 +87,8 @@ MINUTES-LATE is how many minutes you were late."
   (mapcar #'(lambda (x) (expand-file-name x punctuality-logger-log-dir))
           entries))
 
-(defun punctuality-logger-logs (&optional start-date)
-  "Retrieve all logs from `punctuality-logger-log-dir'.
+(defun punctuality-logger-log-names (&optional start-date)
+  "Retrieve the names of all logs from `punctuality-logger-log-dir'.
 
 START-DATE is the date from which to start."
    (remove-if #'(lambda (x) (or (equal x ".")
@@ -96,6 +105,14 @@ START-DATE is the date from which to start."
                                             punctuality-logger-log-dir))
     (eval (read (concat "'" (buffer-string))))))
 
+(defun punctuality-logger-logs (&optional start-date)
+    "Evaluate to an alist containing the name & info of the logs.
+
+START-DATE is the (optional) date to start on."
+  (mapcar (lambda (x)
+            (list x (punctuality-logger-read-log x)))
+          (punctuality-logger-log-names start-date)))
+
 (defun punctuality-logger-write-log (latep &optional minutes-late)
     "Create a new log entry for the current day.
 
@@ -107,16 +124,13 @@ MINUTES-LATE is how many minutes you were late."
    (pp-to-string (punctuality-logger-log-template latep minutes-late))
    (punctuality-logger-log-name)))
 
-(defun punctuality-logger-entries (latep &optional start-date)
-    "Evaluate to a list of entries where you were either late or not late.
+(defun punctuality-logger-entries (test-func &optional start-date)
+    "Evaluate to a list of days that meet the given criteria.
 
-LATEP determines whether the result is a list of late days or on-time days.
+TEST-FUNC is the function to test if a given entry meets the criteria.
 
 START-DATE is the (optional) day to start the results."
-  (remove-if-not #'(lambda (x)
-              (equal (second (assq 'latep (punctuality-logger-read-log x)))
-                     latep))
-                 (punctuality-logger-logs start-date)))
+  (remove-if-not test-func (punctuality-logger-logs start-date)))
 
 ;; Interactive Functions
 
@@ -128,14 +142,16 @@ START-DATE is the (optional) day to start the results."
         (punctuality-logger-write-log t (string-to-number minutes-late)))
       (punctuality-logger-write-log nil)))
 
-(defun punctuality-logger-late-days (&optional start-date )
+(defun punctuality-logger-late-days (&optional start-date)
     "Evaluate to the list of days you were late.
 
 START-DATE is the (optional)"
     (interactive)
-    (switch-to-buffer (generate-new-buffer "late-days"))
-    (insert (punctuality-logger-pp
-             (punctuality-logger-entries t start-date))))
+    (punctuality-logger-out
+     "late-days"
+     (punctuality-logger-entries
+      (lambda (x) (equal t (first (alist-get 'latep (second x)))))
+      start-date)))
 
 ;; Menu Bindings
 

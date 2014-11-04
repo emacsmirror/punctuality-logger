@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014 Philip Woods
 
 ;; Author: Philip Woods <elzairthesorcerer@gmail.com>
-;; Version: 0.3
+;; Version: 0.4
 ;; Package-Requires ((cl-format "*"))
 ;; Keywords: reminder, calendar
 ;; URL: https://gitlab.com/elzair/punctuality-logger
@@ -30,7 +30,7 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'easymenu)
 
 (defvar punctuality-logger-log-dir
   (expand-file-name "~/punctuality-log")
@@ -108,7 +108,7 @@ START-DATE is the date from which to start."
 (defun punctuality-logger-logs (&optional start-date)
     "Evaluate to an alist containing the name & info of the logs.
 
-START-DATE is the (optional) date to start on."
+START-DATE is the (optional) date to start the results."
   (mapcar (lambda (x)
             (list x (punctuality-logger-read-log x)))
           (punctuality-logger-log-names start-date)))
@@ -129,7 +129,7 @@ MINUTES-LATE is how many minutes you were late."
 
 TEST-FUNC is the function to test if a given entry meets the criteria.
 
-START-DATE is the (optional) day to start the results."
+START-DATE is the (optional) date to start the results."
   (remove-if-not test-func (punctuality-logger-logs start-date)))
 
 ;; Interactive Functions
@@ -138,14 +138,14 @@ START-DATE is the (optional) day to start the results."
     "Create a new log entry for the current day."
     (interactive)
     (if (y-or-n-p "Were you late today? ")
-      (let ((minutes-late (read-from-minibuffer "By how many minutes? ")))
-        (punctuality-logger-write-log t (string-to-number minutes-late)))
+      (punctuality-logger-write-log t
+                                    (read-number "By how many minutes? "))
       (punctuality-logger-write-log nil)))
 
 (defun punctuality-logger-late-days (&optional start-date)
     "Evaluate to the list of days you were late.
 
-START-DATE is the (optional)"
+START-DATE is the (optional) date to start the results."
     (interactive)
     (punctuality-logger-out
      "late-days"

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014 Philip Woods
 
 ;; Author: Philip Woods <elzairthesorcerer@gmail.com>
-;; Version: 0.4
+;; Version: 0.5
 ;; Package-Requires ((cl-format "*"))
 ;; Keywords: reminder, calendar
 ;; URL: https://gitlab.com/elzair/punctuality-logger
@@ -37,6 +37,14 @@
   (expand-file-name "~/punctuality-log")
   "Directory where punctuality-logger information is kept.")
 
+(defvar punctuality-logger-on-time-message-template
+  "You were on time on %s."
+  "Format string for days when you are on time.")
+
+(defvar punctuality-logger-late-message-template
+  "You were %d minutes late on %s."
+  "Format string for days when you are late.")
+
 (defun punctuality-logger-pp (lst)
     "Pretty print LST."
   (mapconcat #'identity lst "\n"))
@@ -48,7 +56,7 @@ BUFNAME is the name of the buffer to create and switch to.
 
 BODY is the code to evaluate to obtain the output."
   `(progn (switch-to-buffer (generate-new-buffer ,bufname))
-          (insert (pp-to-string ,@body))))
+          (insert (punctuality-logger-pp ,@body))))
 
 (defun punctuality-logger-current-date ()
     "Evaluate to current date in YYYY-MM-DD format."
@@ -69,6 +77,15 @@ MINUTES-LATE is how many minutes you were late."
         (if (and (bound-and-true-p latep) (boundp 'minutes-late))
             (list `(minutes-late ,minutes-late))
           nil)))
+
+(defun punctuality-logger-format-template (entry)
+    "Create output template for punctuality-log entry ENTRY."
+  (if (first (alist-get 'latep entry))
+      (format punctuality-logger-late-message-template
+            (first (alist-get 'minutes-late entry))
+            (first (alist-get 'date entry)))
+      (format punctuality-logger-on-time-message-template
+              (first (alist-get 'date entry)))))
 
 (defun punctuality-logger-ensure-log-dir-exists ()
     "Ensure the directory to store log files has been created."
@@ -100,18 +117,22 @@ START-DATE is the date from which to start."
               (directory-files punctuality-logger-log-dir)))
 
 (defun punctuality-logger-read-log (file)
-  "Read in the contents of log FILE."
+  "Read in the contents of log entry.
+
+FILE is the name of the file (it is also appended to the result alist)."
   (with-temp-buffer
     (insert-file-contents (expand-file-name file
                                             punctuality-logger-log-dir))
-    (eval (read (concat "'" (buffer-string))))))
+    (append (list (list 'date file))
+            (eval (read (concat "'" (buffer-string)))))))
+
 
 (defun punctuality-logger-logs (&optional start-date)
     "Evaluate to an alist containing the name & info of the logs.
 
 START-DATE is the (optional) date to start the results."
   (mapcar (lambda (x)
-            (list x (punctuality-logger-read-log x)))
+            (punctuality-logger-read-log x))
           (punctuality-logger-log-names start-date)))
 
 (defun punctuality-logger-write-log (latep &optional minutes-late)
@@ -131,8 +152,11 @@ MINUTES-LATE is how many minutes you were late."
 TEST-FUNC is the function to test if a given entry meets the criteria.
 
 START-DATE is the (optional) date to start the results."
-  (remove-if-not test-func (punctuality-logger-logs start-date)))
+  (mapcar #'(lambda (x)
+              (punctuality-logger-format-template x))
+          (remove-if-not test-func (punctuality-logger-logs start-date))))
 
+;;;###autoload
 ;; Interactive Functions
 
 (defun punctuality-logger-new-log ()
@@ -151,7 +175,18 @@ START-DATE is the (optional) date to start the results."
     (punctuality-logger-out
      "late-days"
      (punctuality-logger-entries
-      (lambda (x) (equal t (first (alist-get 'latep (second x)))))
+      (lambda (x) (equal t (first (alist-get 'latep x))))
+      start-date)))
+
+(defun punctuality-logger-all-days (&optional start-date)
+    "Evaluate to the list of all dates.
+
+START-DATE is the (optional) date to start the results."
+    (interactive)
+    (punctuality-logger-out
+     "late-days"
+     (punctuality-logger-entries
+      (lambda (x) t)
       start-date)))
 
 ;; Menu Bindings
@@ -166,8 +201,12 @@ START-DATE is the (optional) date to start the results."
   '("New Punctuality Log" . punctuality-logger-new-log))
 
 (define-key global-map
-  [menu-bar tools punctuality-logger list-late-days]
-  '("List Late Days" . punctuality-logger-late-days))
+  [menu-bar tools punctuality-logger view-late-days]
+  '("View Late Days" . punctuality-logger-late-days))
+
+(define-key global-map
+  [menu-bar tools punctuality-logger list-all-days]
+  '("View All Days" . punctuality-logger-all-days))
 
 (provide 'punctuality-logger)
 ;;; punctuality-logger.el ends here

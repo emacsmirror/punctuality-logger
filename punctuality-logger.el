@@ -30,6 +30,7 @@
 
 ;;; Code:
 
+(require 'cl)
 (require 'easymenu)
 
 (defvar punctuality-logger-log-dir

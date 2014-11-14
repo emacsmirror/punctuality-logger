@@ -3,8 +3,7 @@
 ;; Copyright (C) 2014 Philip Woods
 
 ;; Author: Philip Woods <elzairthesorcerer@gmail.com>
-;; Version: 0.5
-;; Package-Requires ((cl-format "*"))
+;; Version: 0.6
 ;; Keywords: reminder, calendar
 ;; URL: https://gitlab.com/elzair/punctuality-logger
 
@@ -28,22 +27,43 @@
 ;; This package helps you keep track of when you are on time
 ;; and when you are late to your various appointments.
 
+;; Create a new entry with M-x punctuality-logger-new-entry
+;; View all days with M-x punctuality-logger-all-days
+;; View just the days you were late with M-x puntuality-logger-late-days
+
+;; All of these functions are also available through the menu bar:
+;; Tools->Punctuality Logger
+
 ;;; Code:
 
 (require 'cl)
-(require 'easymenu)
 
-(defvar punctuality-logger-log-dir
+;; User Customization
+
+(defgroup punctuality-logger
+  '()
+  "Log when you are on time and when you are late."
+  :group 'applications)
+
+(defcustom punctuality-logger-log-dir
   (expand-file-name "~/punctuality-log")
-  "Directory where punctuality-logger information is kept.")
+  "Location of Punctuality Logger's entries."
+  :type 'string
+  :group 'punctuality-logger)
 
-(defvar punctuality-logger-on-time-message-template
+(defcustom punctuality-logger-on-time-message-template
   "You were on time on %s."
-  "Format string for days when you are on time.")
+  "Format string for displaying on-time entries."
+  :type 'string
+  :group 'punctuality-logger)
 
-(defvar punctuality-logger-late-message-template
+(defcustom punctuality-logger-late-message-template
   "You were %d minutes late on %s."
-  "Format string for days when you are late.")
+  "Format string for displaying late entries."
+  :type 'string
+  :group 'punctuality-logger)
+
+; Utility functions and macros
 
 (defun punctuality-logger-pp (lst)
     "Pretty print LST."
@@ -159,7 +179,7 @@ START-DATE is the (optional) date to start the results."
 ;;;###autoload
 ;; Interactive Functions
 
-(defun punctuality-logger-new-log ()
+(defun punctuality-logger-new-entry ()
     "Create a new log entry for the current day."
     (interactive)
     (if (y-or-n-p "Were you late today? ")
@@ -197,16 +217,16 @@ START-DATE is the (optional) date to start the results."
   'kill-buffer)
 
 (define-key global-map
-  [menu-bar tools punctuality-logger new-punctuality-log]
-  '("New Punctuality Log" . punctuality-logger-new-log))
+  [menu-bar tools punctuality-logger list-all-days]
+  '("View All Days" . punctuality-logger-all-days))
 
 (define-key global-map
   [menu-bar tools punctuality-logger view-late-days]
   '("View Late Days" . punctuality-logger-late-days))
 
 (define-key global-map
-  [menu-bar tools punctuality-logger list-all-days]
-  '("View All Days" . punctuality-logger-all-days))
+  [menu-bar tools punctuality-logger new-entry]
+  '("New Entry" . punctuality-logger-new-entry))
 
 (provide 'punctuality-logger)
 ;;; punctuality-logger.el ends here

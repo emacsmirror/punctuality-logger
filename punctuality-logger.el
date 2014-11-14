@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014 Philip Woods
 
 ;; Author: Philip Woods <elzairthesorcerer@gmail.com>
-;; Version: 0.7
+;; Version: 0.8
 ;; Keywords: reminder, calendar
 ;; URL: https://gitlab.com/elzair/punctuality-logger
 

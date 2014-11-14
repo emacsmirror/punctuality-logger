@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014 Philip Woods
 
 ;; Author: Philip Woods <elzairthesorcerer@gmail.com>
-;; Version: 0.6
+;; Version: 0.7
 ;; Keywords: reminder, calendar
 ;; URL: https://gitlab.com/elzair/punctuality-logger
 
@@ -63,6 +63,18 @@
   :type 'string
   :group 'punctuality-logger)
 
+(defcustom punctuality-logger-use-version-control
+  '()
+  "Whether or not Punctuality Logger uses Version Control."
+  :type 'boolean
+  :group 'punctuality-logger)
+
+(defcustom punctuality-logger-version-control-command
+  "git add -A . && git commit -m 'Added another entry' && git push"
+  "Command to commit logs to version control (if available)."
+  :type 'string
+  :group 'punctuality-logger)
+
 ; Utility functions and macros
 
 (defun punctuality-logger-pp (lst)
@@ -119,6 +131,13 @@ MINUTES-LATE is how many minutes you were late."
       (write-region (point-min)
                     (point-max)
                     file))))
+
+(defun punctuality-logger-commit-to-version-control ()
+    "Commit change to version control."
+    (let ((cur-dir default-directory))
+      (cd punctuality-logger-log-dir)
+      (shell-command punctuality-logger-version-control-command)
+      (cd cur-dir)))
 
 (defun punctuality-logger-append-log-dir (entries)
     "Append `punctuality-logger-log-dir' to ENTRIES."
@@ -185,7 +204,9 @@ START-DATE is the (optional) date to start the results."
     (if (y-or-n-p "Were you late today? ")
       (punctuality-logger-write-log t
                                     (read-number "By how many minutes? "))
-      (punctuality-logger-write-log nil)))
+      (punctuality-logger-write-log nil))
+    (when punctuality-logger-use-version-control
+      (punctuality-logger-commit-to-version-control)))
 
 (defun punctuality-logger-late-days (&optional start-date)
     "Evaluate to the list of days you were late.

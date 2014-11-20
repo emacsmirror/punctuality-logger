@@ -195,9 +195,9 @@ START-DATE is the (optional) date to start the results."
               (punctuality-logger-format-template x))
           (remove-if-not test-func (punctuality-logger-logs start-date))))
 
-;;;###autoload
 ;; Interactive Functions
 
+;;;###autoload
 (defun punctuality-logger-new-entry ()
     "Create a new log entry for the current day."
     (interactive)
@@ -208,6 +208,7 @@ START-DATE is the (optional) date to start the results."
     (when punctuality-logger-use-version-control
       (punctuality-logger-commit-to-version-control)))
 
+;;;###autoload
 (defun punctuality-logger-late-days (&optional start-date)
     "Evaluate to the list of days you were late.
 
@@ -219,6 +220,7 @@ START-DATE is the (optional) date to start the results."
       (lambda (x) (equal t (first (alist-get 'latep x))))
       start-date)))
 
+;;;###autoload
 (defun punctuality-logger-all-days (&optional start-date)
     "Evaluate to the list of all dates.
 
@@ -232,19 +234,23 @@ START-DATE is the (optional) date to start the results."
 
 ;; Menu Bindings
 
+;;;###autoload
 (define-key-after global-map
   [menu-bar tools punctuality-logger]
   (cons "Punctuality Logger" (make-sparse-keymap "major modes"))
   'kill-buffer)
 
+;;;###autoload
 (define-key global-map
   [menu-bar tools punctuality-logger list-all-days]
   '("View All Days" . punctuality-logger-all-days))
 
+;;;###autoload
 (define-key global-map
   [menu-bar tools punctuality-logger view-late-days]
   '("View Late Days" . punctuality-logger-late-days))
 
+;;;###autoload
 (define-key global-map
   [menu-bar tools punctuality-logger new-entry]
   '("New Entry" . punctuality-logger-new-entry))

@@ -6,7 +6,7 @@ A simple punctuality logger for Emacs.
 
 ** Install
 
-Get *punctuality-logger* from [MELPA](http://melpa.org).
+Get *punctuality-logger* from [[http://melpa.org][MELPA]].
 
 To set-up MELPA, add the following code to =~/.emacs.d/init.el=.
 
